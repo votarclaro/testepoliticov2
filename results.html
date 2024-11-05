@@ -70,6 +70,7 @@ class="statcounter"
 src="//c.statcounter.com/11325211/0/fd9f0659/1/" alt="web
 stats"></a></div></noscript>
 <script>
+    <h2>Closest Party Match: <span class="weight-300" id="party-label"></span></h2>
     function getQueryVariable(variable)
     {
            var query = window.location.search.substring(1)
@@ -145,6 +146,39 @@ stats"></a></div></noscript>
         }
     }
     document.getElementById("ideology-label").innerHTML = ideology
+
+    function calculatePartyMatch() {
+    let ideologyDistances = {};
+
+    // Calcular a distância para cada ideologia
+    for (let i = 0; i < ideologies.length; i++) {
+        let dist = 0;
+        dist += Math.pow(Math.abs(ideologies[i].stats.econ - equality), 2);
+        dist += Math.pow(Math.abs(ideologies[i].stats.govt - liberty), 2);
+        dist += Math.pow(Math.abs(ideologies[i].stats.dipl - peace), 2);
+        dist += Math.pow(Math.abs(ideologies[i].stats.scty - progress), 2);
+        
+        ideologyDistances[ideologies[i].name] = Math.sqrt(dist);
+    }
+
+    // Calcular a pontuação de correspondência para cada partido
+    let partyScores = parties.map(party => {
+        let score = party.ideologies.reduce((sum, ideology) => {
+            return sum + (1 / (ideologyDistances[ideology] || Infinity));
+        }, 0);
+        return { name: party.name, score: score };
+    });
+
+    // Ordenar partidos por pontuação (maior para menor)
+    partyScores.sort((a, b) => b.score - a.score);
+
+    // Pegar os 3 partidos mais próximos
+    let topParties = partyScores.slice(0, 3);
+
+    // Exibir os partidos correspondentes
+    let partyMatches = topParties.map(party => `${party.name} (${(party.score * 100).toFixed(2)}% match)`).join(", ");
+    document.getElementById("party-label").innerHTML = partyMatches || "No match found";
+}
 
     function createImage(src, x, y, w, h) {
         img = new Image ()
@@ -228,6 +262,7 @@ stats"></a></div></noscript>
         ctx.fillText("Societal Axis: " + document.getElementById("society-label").innerHTML, 400, 535)
 
         document.getElementById("banner").src = c.toDataURL();
+        calculatePartyMatch();
     }
     </script>
 </body>
